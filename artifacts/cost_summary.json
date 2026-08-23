@@ -1,0 +1,67 @@
+{
+  "assumptions": {
+    "usd_to_inr": 85.0,
+    "chargeback_fee_inr": 1500.0,
+    "scenarios": {
+      "conservative": {
+        "margin_rate": 0.2,
+        "churn_cost": 150.0
+      },
+      "moderate": {
+        "margin_rate": 0.3,
+        "churn_cost": 400.0
+      },
+      "aggressive": {
+        "margin_rate": 0.4,
+        "churn_cost": 900.0
+      }
+    }
+  },
+  "holdout": {
+    "n_transactions": 118108,
+    "n_fraud": 4064,
+    "total_value_inr": 1380691735.47,
+    "do_nothing_cost_inr": 57940418.56
+  },
+  "results": {
+    "conservative": {
+      "margin_rate": 0.2,
+      "churn_cost": 150.0,
+      "money_optimal_threshold": 0.6963483709273183,
+      "money_optimal_savings": 19059483.475,
+      "money_optimal_precision": 0.4206439393939394,
+      "money_optimal_recall": 0.546505905511811,
+      "f1_optimal_threshold": 0.8114060150375939,
+      "f1_optimal_savings": 16676505.288000003,
+      "f1_optimal_precision": 0.5932553337921541,
+      "f1_optimal_recall": 0.4242125984251969,
+      "penalty_of_using_f1": 2382978.186999999
+    },
+    "moderate": {
+      "margin_rate": 0.3,
+      "churn_cost": 400.0,
+      "money_optimal_threshold": 0.7963984962406014,
+      "money_optimal_savings": 14657180.189000003,
+      "money_optimal_precision": 0.5645313979173241,
+      "money_optimal_recall": 0.4402066929133858,
+      "f1_optimal_threshold": 0.8114060150375939,
+      "f1_optimal_savings": 14440869.909500003,
+      "f1_optimal_precision": 0.5932553337921541,
+      "f1_optimal_recall": 0.4242125984251969,
+      "penalty_of_using_f1": 216310.27950000018
+    },
+    "aggressive": {
+      "margin_rate": 0.4,
+      "churn_cost": 900.0,
+      "money_optimal_threshold": 0.8364185463659147,
+      "money_optimal_savings": 12208999.359000005,
+      "money_optimal_precision": 0.6475541299117883,
+      "money_optimal_recall": 0.3973917322834646,
+      "f1_optimal_threshold": 0.8114060150375939,
+      "f1_optimal_savings": 11909734.531000003,
+      "f1_optimal_precision": 0.5932553337921541,
+      "f1_optimal_recall": 0.4242125984251969,
+      "penalty_of_using_f1": 299264.8280000016
+    }
+  }
+}

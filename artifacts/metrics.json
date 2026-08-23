@@ -1,0 +1,11 @@
+{
+  "roc_auc": 0.911179085510441,
+  "pr_auc": 0.5178423958584288,
+  "test_fraud_rate": 0.034409184813899145,
+  "train_fraud_rate": 0.03513521522674162,
+  "best_iteration": 107,
+  "n_train": 472432,
+  "n_test": 118108,
+  "n_features": 431,
+  "split_transaction_dt": 12192900
+}
