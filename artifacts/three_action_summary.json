@@ -1,0 +1,97 @@
+{
+  "assumptions": {
+    "usd_to_inr": 85.0,
+    "chargeback_fee_inr": 1500.0,
+    "fraud_bypass_rate": 0.15,
+    "legit_abandon_rate": 0.06,
+    "challenge_op_cost_inr": 5.0,
+    "abandon_churn_multiplier": 0.4,
+    "scenarios": {
+      "conservative": {
+        "margin_rate": 0.2,
+        "churn_cost": 150.0
+      },
+      "moderate": {
+        "margin_rate": 0.3,
+        "churn_cost": 400.0
+      },
+      "aggressive": {
+        "margin_rate": 0.4,
+        "churn_cost": 900.0
+      }
+    }
+  },
+  "holdout": {
+    "n_transactions": "aggressive",
+    "n_fraud": 4064,
+    "do_nothing_cost_inr": 57940418.56
+  },
+  "results": {
+    "conservative": {
+      "two_action": {
+        "threshold": 0.68,
+        "savings": 18692861.991000004,
+        "effective_recall": 0.561761811023622,
+        "n_blocked": 5712,
+        "legit_blocked": 3429
+      },
+      "three_action": {
+        "t_low": 0.22,
+        "t_high": 0.92,
+        "savings": 40354930.799440004,
+        "effective_recall": 0.7920029527559055,
+        "n_challenged": 28943,
+        "n_blocked": 1442,
+        "challenge_rate": 0.2450553730483964,
+        "legit_challenged": 26561,
+        "legit_blocked": 248
+      },
+      "gain_inr": 21662068.80844,
+      "recall_gain": 0.2302411417322835
+    },
+    "moderate": {
+      "two_action": {
+        "threshold": 0.8,
+        "savings": 14502438.976000004,
+        "effective_recall": 0.43528543307086615,
+        "n_blocked": 3099,
+        "legit_blocked": 1330
+      },
+      "three_action": {
+        "t_low": 0.28,
+        "t_high": 0.9400000000000001,
+        "savings": 37533897.31293,
+        "effective_recall": 0.7616264763779528,
+        "n_challenged": 22781,
+        "n_blocked": 1237,
+        "challenge_rate": 0.19288278524740068,
+        "legit_challenged": 20396,
+        "legit_blocked": 169
+      },
+      "gain_inr": 23031458.33693,
+      "recall_gain": 0.32634104330708663
+    },
+    "aggressive": {
+      "two_action": {
+        "threshold": 0.86,
+        "savings": 12160803.656999998,
+        "effective_recall": 0.36638779527559057,
+        "n_blocked": 2120,
+        "legit_blocked": 631
+      },
+      "three_action": {
+        "t_low": 0.28,
+        "t_high": 0.9400000000000001,
+        "savings": 35100714.21074,
+        "effective_recall": 0.7616264763779528,
+        "n_challenged": 22781,
+        "n_blocked": 1237,
+        "challenge_rate": 0.19288278524740068,
+        "legit_challenged": 20396,
+        "legit_blocked": 169
+      },
+      "gain_inr": 22939910.553740002,
+      "recall_gain": 0.3952386811023622
+    }
+  }
+}
