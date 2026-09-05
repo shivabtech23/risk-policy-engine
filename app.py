@@ -17,10 +17,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # -----------------------------------------------------------------------------
-# 1. PAGE CONFIG & DESIGN SYSTEM (RAZORPAY BRAND AESTHETICS)
+# 1. PAGE CONFIG & DESIGN SYSTEM
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Razorpay Risk Policy Explorer",
+    page_title="Fraud Risk Policy Explorer",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -302,12 +302,13 @@ def get_best_two_action(margin, churn):
             }
     return best
 
-# Fast 3-Action Surface Precomputation
+# Fast 3-Action Surface Precomputation (returns both global unconstrained and 10% friction-constrained optima)
 @st.cache_data
 def compute_surface_matrix(margin, churn, bypass, abandon, chal_cost):
     matrix_savings = np.full((K, K), np.nan)
     matrix_recall = np.full((K, K), np.nan)
     best_3 = None
+    best_3_cons = None
 
     for i in range(K):
         for j in range(i, K):
@@ -325,21 +326,32 @@ def compute_surface_matrix(margin, churn, bypass, abandon, chal_cost):
             
             stopped = f_block_cnt + (1 - bypass) * f_chal_cnt
             rec = stopped / n_fraud
+            c_rate = (f_chal_cnt + l_chal_cnt) / n
 
             matrix_savings[j, i] = s / 1e5
             matrix_recall[j, i] = rec
 
-            if best_3 is None or s > best_3["savings"]:
-                best_3 = {
-                    "t_low": float(GRID[i]),
-                    "t_high": float(GRID[j]),
-                    "savings": float(s),
-                    "recall": float(rec),
-                    "legit_blocked": int(l_block_cnt),
-                    "n_challenged": int(f_chal_cnt + l_chal_cnt),
-                }
+            res = {
+                "t_low": float(GRID[i]),
+                "t_high": float(GRID[j]),
+                "savings": float(s),
+                "recall": float(rec),
+                "legit_blocked": int(l_block_cnt),
+                "n_challenged": int(f_chal_cnt + l_chal_cnt),
+                "challenge_rate": float(c_rate),
+            }
 
-    return matrix_savings, matrix_recall, best_3
+            if best_3 is None or s > best_3["savings"]:
+                best_3 = res
+
+            if c_rate <= 0.10:
+                if best_3_cons is None or s > best_3_cons["savings"]:
+                    best_3_cons = res
+
+    if best_3_cons is None:
+        best_3_cons = best_3
+
+    return matrix_savings, matrix_recall, best_3, best_3_cons
 
 
 # -----------------------------------------------------------------------------
@@ -411,30 +423,37 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 st.markdown("""
 <div class="hero-container">
-    <div class="hero-title">Razorpay Fraud Risk Policy Explorer</div>
+    <div class="hero-title">Fraud Risk Policy Explorer</div>
     <div class="hero-subtitle">Turn statistical fraud model scores into optimal money-saving policy decisions with 3-action step-up authentication.</div>
     <div class="badge-row">
         <span class="badge badge-indigo">⚡ IEEE-CIS Dataset</span>
-        <span class="badge badge-emerald">🎯 LightGBM ROC-AUC: 0.9114</span>
+        <span class="badge badge-emerald">🎯 LightGBM ROC-AUC: 0.9112</span>
         <span class="badge">📊 Held-Out Test Set: 118,108 Txns</span>
-        <span class="badge badge-amber">💰 3-Action Policy Engine</span>
+        <span class="badge badge-amber">🏆 Razorpay Buildathon 2026 — Track 02 Submission</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # Calculate optimal values
-matrix_savings, matrix_recall, best_3 = compute_surface_matrix(margin, churn, bypass, abandon, chal_cost)
+matrix_savings, matrix_recall, best_3, best_3_cons = compute_surface_matrix(margin, churn, bypass, abandon, chal_cost)
 b2 = get_best_two_action(margin, churn)
 
 # Threshold Sliders Header & Auto-Optimize Action
-ctrl_col1, ctrl_col2 = st.columns([3, 1])
+ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([2.5, 1.2, 1.2])
 
 with ctrl_col2:
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    if st.button("✨ Auto-Optimize Policy", type="primary", use_container_width=True):
+    if st.button("🛡️ 10% Friction Cap", type="primary", use_container_width=True, help="Set policy to optimal thresholds respecting a 10% 3DS challenge budget"):
+        st.session_state["t_low"] = best_3_cons["t_low"]
+        st.session_state["t_high"] = best_3_cons["t_high"]
+        st.toast("Policy set to 10% friction cap thresholds!", icon="🛡️")
+
+with ctrl_col3:
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    if st.button("⚡ Max Savings (Unconstrained)", use_container_width=True, help="Set policy to global unconstrained mathematical maximum"):
         st.session_state["t_low"] = best_3["t_low"]
         st.session_state["t_high"] = best_3["t_high"]
-        st.toast("Policy auto-optimized to global money-optimal thresholds!", icon="🎯")
+        st.toast("Policy set to global unconstrained financial optimum!", icon="⚡")
 
 with ctrl_col1:
     st.markdown("##### 🎛️ Policy Threshold Sliders")
@@ -442,12 +461,12 @@ with ctrl_col1:
     with s_col1:
         t_low = st.slider(
             "Challenge above risk score (t_low)", 0.0, 1.0, 
-            key="t_low", value=st.session_state.get("t_low", 0.22), step=0.01
+            key="t_low", value=st.session_state.get("t_low", best_3_cons["t_low"]), step=0.01
         )
     with s_col2:
         t_high = st.slider(
             "Block above risk score (t_high)", 0.0, 1.0, 
-            key="t_high", value=st.session_state.get("t_high", 0.92), step=0.01
+            key="t_high", value=st.session_state.get("t_high", best_3_cons["t_high"]), step=0.01
         )
 
 if t_low > t_high:
@@ -477,7 +496,7 @@ st.markdown(f"""
         <div class="metric-label">Effective Fraud Stopped</div>
         <div class="metric-value">{r['recall']:.1%}</div>
         <div class="metric-sub {'sub-positive' if delta_recall >= 0 else 'sub-negative'}">
-            {'▲' if delta_recall >= 0 else '▼'} {abs(delta_recall):+.1f} pts vs 2-Action Best
+            {'▲' if delta_recall >= 0 else '▼'} {abs(delta_recall):.1f} pts vs 2-Action Best
         </div>
     </div>
     <div class="metric-card">
@@ -559,21 +578,31 @@ with tab1:
         name=f"Best 2-Action ({b2['threshold']:.2f})"
     ))
 
+    # 10% Friction Cap Optimum Point
+    surface_fig.add_trace(go.Scatter(
+        x=[best_3_cons["t_low"]], y=[best_3_cons["t_high"]],
+        mode="markers+text",
+        marker=dict(color="#38bdf8", size=16, symbol="diamond", line=dict(color="white", width=2)),
+        text=["10% Friction Cap"],
+        textposition="bottom right",
+        name=f"10% Friction Cap ({best_3_cons['t_low']:.2f}, {best_3_cons['t_high']:.2f})"
+    ))
+
     # Global 3-Action Optimum Point
     surface_fig.add_trace(go.Scatter(
         x=[best_3["t_low"]], y=[best_3["t_high"]],
         mode="markers+text",
         marker=dict(color="#10b981", size=18, symbol="star", line=dict(color="white", width=2)),
-        text=["Global 3-Action Optimum"],
+        text=["Global Max Savings"],
         textposition="top right",
-        name=f"Optimum 3-Action ({best_3['t_low']:.2f}, {best_3['t_high']:.2f})"
+        name=f"Global Unconstrained ({best_3['t_low']:.2f}, {best_3['t_high']:.2f})"
     ))
 
     # Current Selection Point
     surface_fig.add_trace(go.Scatter(
         x=[t_low], y=[t_high],
         mode="markers",
-        marker=dict(color="#ef4444", size=16, symbol="diamond", line=dict(color="white", width=2.5)),
+        marker=dict(color="#ef4444", size=16, symbol="x", line=dict(color="white", width=2.5)),
         name=f"Current Selection ({t_low:.2f}, {t_high:.2f})"
     ))
 
@@ -587,6 +616,16 @@ with tab1:
     )
 
     st.plotly_chart(surface_fig, use_container_width=True)
+
+    st.markdown("""
+    <div class='glass-box'>
+        <h4>💡 Policy Trade-Off: Operational Friction vs. Unconstrained Math Optimum</h4>
+        <ul style='margin-bottom: 0;'>
+            <li><b>Global Max Savings (Green Star)</b>: The unconstrained financial optimum challenges ~24.5% of overall traffic to capture maximum possible fraud.</li>
+            <li><b>10% Friction Cap (Cyan Diamond)</b>: Under a realistic operational budget capping 3DS step-up friction at ≤10%, this policy catches <b>69.4% of all fraud</b> (vs 56% in 2-action) while blocking fewer genuine customers and preserving checkout conversion.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -802,8 +841,8 @@ with tab5:
     with m_col2:
         st.markdown("<div class='glass-box'>", unsafe_allow_html=True)
         st.markdown("#### 📈 Model Performance Metrics")
-        st.markdown("- **ROC-AUC**: **0.9114**")
-        st.markdown("- **PR-AUC**: **0.5422** (vs 3.5% baseline fraud rate)")
+        st.markdown("- **ROC-AUC**: **0.9112**")
+        st.markdown("- **PR-AUC**: **0.5178** (vs 3.5% baseline fraud rate)")
         st.markdown("- **Evaluation Strategy**: Time-ordered split (Train: first 80%, Test: last 20%)")
         st.markdown("- **Test Transactions**: 118,108 transactions")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -814,5 +853,5 @@ with tab5:
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.caption(
-    "Razorpay Buildathon Track 02 | Fraud Risk Policy Explorer | Powered by Streamlit, LightGBM & Plotly"
+    "Razorpay Buildathon 2026 — Track 02 Submission | Fraud Risk Policy Explorer | Powered by Streamlit, LightGBM & Plotly"
 )
