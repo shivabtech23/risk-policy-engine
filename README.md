@@ -1,6 +1,6 @@
 # Pricing the decision, not the prediction
 
-**Razorpay Buildathon — Track 02, AI Risk Manager**
+**Razorpay Buildathon — Track 02, AI Risk Manager** · [Live demo →](https://risk-policy-engine.streamlit.app/)
 
 A fraud detector's threshold is a business decision, not a statistical one. This project
 prices that decision in rupees and shows what the standard approach costs.
